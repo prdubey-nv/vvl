@@ -569,3 +569,191 @@ TEST_F(PositiveMemory, BindMemoryDX12Handle) {
     vk::BindImageMemory(device(), image, memory, 0);
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
+
+TEST_F(PositiveMemory, CopyMemoryIndirect) {
+    TEST_DESCRIPTION("Validate correct usage of vkCmdCopyMemoryIndirectKHR");
+    AddRequiredExtensions(VK_KHR_COPY_MEMORY_INDIRECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::indirectMemoryCopy);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+
+    RETURN_IF_SKIP(Init());
+
+    VkCopyMemoryIndirectCommandKHR cmd1 = {};
+    cmd1.dstAddress = 4;
+    cmd1.srcAddress = 4;
+    cmd1.size = 0;
+
+    VkCopyMemoryIndirectCommandKHR cmd2 = {};
+    cmd2.dstAddress = 0;
+    cmd2.srcAddress = 0;
+    cmd2.size = 0;
+
+    VkCopyMemoryIndirectCommandKHR cmds[2] = {cmd1, cmd2};
+
+    // Create & bind buffer
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.size = 2 * sizeof(VkCopyMemoryIndirectCommandKHR);
+    buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
+
+    // Allocate memory
+    VkMemoryRequirements memRequirements;
+    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &memRequirements);
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
+    alloc_info.allocationSize = 2 * sizeof(VkCopyMemoryIndirectCommandKHR);
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vk::GetPhysicalDeviceMemoryProperties(m_device->phy(), &memProperties);
+    // Select appropriate memory type
+    std::optional<uint32_t> memTypeIndex;
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i) {
+        if ((memRequirements.memoryTypeBits & (1 << i)) &&
+            (memProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
+            memTypeIndex = i;
+            break;
+        }
+    }
+    if (!memTypeIndex.has_value()) {
+        throw std::runtime_error("Failed to find appropriate memory type!");
+    }
+    alloc_info.memoryTypeIndex = memTypeIndex.value();
+    vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
+    vk::BindBufferMemory(device(), buffer.handle(), buffer_memory.handle(), 0);
+
+    // Copy commands to buffer
+    void *data;
+    vk::MapMemory(device(), buffer_memory.handle(), 0, VK_WHOLE_SIZE, 0, &data);
+    memcpy(data, &cmds, sizeof(cmds));
+    vk::UnmapMemory(device(), buffer_memory.handle());
+    
+    uint32_t copyCount = 2, stride = sizeof(VkCopyMemoryIndirectCommandKHR);
+
+    m_command_buffer.begin();
+    
+    vk::CmdCopyMemoryIndirectKHR(m_command_buffer, buffer.address(), copyCount, stride);
+    
+    m_command_buffer.end();
+}
+
+TEST_F(PositiveMemory, CopyMemoryToImageIndirect) {
+    TEST_DESCRIPTION("Validate correct usage of vkCmdCopyMemoryToImageIndirectKHR");
+    AddRequiredExtensions(VK_KHR_COPY_MEMORY_INDIRECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::indirectMemoryToImageCopy);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+
+    RETURN_IF_SKIP(Init());
+
+    VkCopyMemoryToImageIndirectCommandKHR cmd1 = {};
+    cmd1.srcAddress = 0;
+    cmd1.bufferRowLength = 8;
+    cmd1.bufferImageHeight = 8;
+    cmd1.imageSubresource = VkImageSubresourceLayers{};
+    cmd1.imageOffset = VkOffset3D{0, 0, 0};
+    cmd1.imageExtent = VkExtent3D{8, 8, 1};
+
+    VkCopyMemoryToImageIndirectCommandKHR cmd2 = {};
+    cmd2.srcAddress = 1024;
+    cmd2.bufferRowLength = 4;
+    cmd2.bufferImageHeight = 4;
+    cmd2.imageSubresource = VkImageSubresourceLayers{};
+    cmd2.imageOffset = VkOffset3D{0, 0, 0};
+    cmd2.imageExtent = VkExtent3D{4, 4, 1};
+
+    VkCopyMemoryToImageIndirectCommandKHR cmds[2] = {cmd1, cmd2};
+
+    // Create & bind buffer
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.size = 2 * sizeof(VkCopyMemoryToImageIndirectCommandKHR);
+    buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
+
+    // Allocate memory
+    VkMemoryRequirements memRequirements;
+    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &memRequirements);
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
+    alloc_info.allocationSize = 2 * sizeof(VkCopyMemoryToImageIndirectCommandKHR);
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vk::GetPhysicalDeviceMemoryProperties(m_device->phy(), &memProperties);
+    // Select appropriate memory type
+    std::optional<uint32_t> memTypeIndex;
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i) {
+        if ((memRequirements.memoryTypeBits & (1 << i)) &&
+            (memProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
+            memTypeIndex = i;
+            break;
+        }
+    }
+    if (!memTypeIndex.has_value()) {
+        throw std::runtime_error("Failed to find appropriate memory type!");
+    }
+    alloc_info.memoryTypeIndex = memTypeIndex.value();
+    vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
+    vk::BindBufferMemory(device(), buffer.handle(), buffer_memory.handle(), 0);
+
+    // Copy commands to buffer
+    void *data;
+    vk::MapMemory(device(), buffer_memory.handle(), 0, VK_WHOLE_SIZE, 0, &data);
+    memcpy(data, &cmds, sizeof(cmds));
+    vk::UnmapMemory(device(), buffer_memory.handle());
+
+    // Create pImageSubresources
+    const uint32_t copyCount = 2, stride = sizeof(VkCopyMemoryToImageIndirectCommandKHR);
+    VkImageSubresourceLayers resLayer = {};
+    resLayer.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    resLayer.mipLevel = 0;
+    resLayer.baseArrayLayer = 0;
+    resLayer.layerCount = 1;
+    VkImageSubresourceLayers res_layers[copyCount] = {resLayer, resLayer};
+    const VkImageSubresourceLayers *pImageSubresources = res_layers;
+
+    VkImageLayout dstImageLayout{VK_IMAGE_LAYOUT_GENERAL};
+
+    m_command_buffer.begin();
+
+    const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
+    const int32_t tex_width = 32;
+    const int32_t tex_height = 32;
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = tex_format;
+    image_create_info.extent.width = tex_width;
+    image_create_info.extent.height = tex_height;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 4;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.flags = 0;
+    vkt::Image src_image(*m_device, image_create_info, vkt::set_layout);
+
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    vkt::Image dst_image(*m_device, image_create_info, vkt::set_layout);
+
+    VkImageCopy copy_region;
+    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy_region.srcSubresource.mipLevel = 0;
+    copy_region.srcSubresource.baseArrayLayer = 0;
+    copy_region.srcSubresource.layerCount = 1;
+    copy_region.dstSubresource = copy_region.srcSubresource;
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstOffset = {0, 0, 0};
+    copy_region.extent.width = 1;
+    copy_region.extent.height = 1;
+    copy_region.extent.depth = 1;
+
+    vk::CmdCopyImage(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    
+    vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, buffer.address(), copyCount, stride, dst_image, dstImageLayout,
+                                        pImageSubresources);
+
+    m_command_buffer.end();
+}

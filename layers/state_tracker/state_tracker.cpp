@@ -964,6 +964,7 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_descriptor_buffer, &phys_dev_props->descriptor_buffer_density_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_host_image_copy, &phys_dev_props->host_image_copy_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_map_memory_placed, &phys_dev_props->map_memory_placed_props);
+    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_copy_memory_indirect, &phys_dev_props->copy_memory_indirect_props);
     if ((phys_dev_props->host_image_copy_props.copySrcLayoutCount > 0) ||
         (phys_dev_props->host_image_copy_props.copyDstLayoutCount > 0)) {
         // Have to allocate memory for the layout lists

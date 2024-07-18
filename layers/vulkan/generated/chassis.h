@@ -1211,6 +1211,14 @@ VKAPI_ATTR void VKAPI_CALL CmdSetDescriptorBufferOffsets2EXT(
 VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorBufferEmbeddedSamplers2EXT(
     VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo);
 
+VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
+                                                    uint32_t copyCount, uint32_t stride);
+
+VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
+                                                           uint32_t copyCount, uint32_t stride, VkImage dstImage,
+                                                           VkImageLayout dstImageLayout,
+                                                           const VkImageSubresourceLayers* pImageSubresources);
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
                                                             const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator,
@@ -3616,6 +3624,12 @@ class ValidationObject {
         virtual bool PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo, const RecordObject& record_obj) {};
         virtual void PostCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo, const RecordObject& record_obj) {};
+        virtual bool PreCallValidateCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount, uint32_t stride, const ErrorObject& error_obj) const { return false; };
+        virtual void PreCallRecordCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount, uint32_t stride, const RecordObject& record_obj) {};
+        virtual void PostCallRecordCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount, uint32_t stride, const RecordObject& record_obj) {};
+        virtual bool PreCallValidateCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount, uint32_t stride, VkImage dstImage, VkImageLayout dstImageLayout, const VkImageSubresourceLayers* pImageSubresources, const ErrorObject& error_obj) const { return false; };
+        virtual void PreCallRecordCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount, uint32_t stride, VkImage dstImage, VkImageLayout dstImageLayout, const VkImageSubresourceLayers* pImageSubresources, const RecordObject& record_obj) {};
+        virtual void PostCallRecordCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount, uint32_t stride, VkImage dstImage, VkImageLayout dstImageLayout, const VkImageSubresourceLayers* pImageSubresources, const RecordObject& record_obj) {};
         virtual bool PreCallValidateCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback, const ErrorObject& error_obj) const { return false; };
         virtual void PreCallRecordCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback, const RecordObject& record_obj) {};
         virtual void PostCallRecordCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback, const RecordObject& record_obj) {};

@@ -378,6 +378,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_calibrated_timestamps{kNotEnabled};
     ExtEnabled vk_khr_shader_expect_assume{kNotEnabled};
     ExtEnabled vk_khr_maintenance6{kNotEnabled};
+    ExtEnabled vk_khr_copy_memory_indirect{kNotEnabled};
     ExtEnabled vk_khr_shader_relaxed_extended_instruction{kNotEnabled};
     ExtEnabled vk_khr_maintenance7{kNotEnabled};
     ExtEnabled vk_nv_glsl_shader{kNotEnabled};
@@ -950,6 +951,11 @@ struct DeviceExtensions : public InstanceExtensions {
                                                                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {vvl::Extension::_VK_KHR_maintenance6,
              Info(&DeviceExtensions::vk_khr_maintenance6, {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
+            {vvl::Extension::_VK_KHR_copy_memory_indirect,
+             Info(&DeviceExtensions::vk_khr_copy_memory_indirect,
+                  {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                     VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
+                    {&DeviceExtensions::vk_khr_buffer_device_address, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME}}})},
             {vvl::Extension::_VK_KHR_shader_relaxed_extended_instruction,
              Info(&DeviceExtensions::vk_khr_shader_relaxed_extended_instruction, {})},
             {vvl::Extension::_VK_KHR_maintenance7,
@@ -1851,6 +1857,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_calibrated_timestamps:
         case vvl::Extension::_VK_KHR_shader_expect_assume:
         case vvl::Extension::_VK_KHR_maintenance6:
+        case vvl::Extension::_VK_KHR_copy_memory_indirect:
         case vvl::Extension::_VK_KHR_shader_relaxed_extended_instruction:
         case vvl::Extension::_VK_KHR_maintenance7:
         case vvl::Extension::_VK_NV_glsl_shader:

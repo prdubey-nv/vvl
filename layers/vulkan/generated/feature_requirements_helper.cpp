@@ -713,6 +713,35 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             return {&vk_struct->cooperativeMatrixRobustBufferAccess,
                     "VkPhysicalDeviceCooperativeMatrixFeaturesKHR::cooperativeMatrixRobustBufferAccess"};
         }
+        case Feature::indirectMemoryCopy: {
+            auto vk_struct = const_cast<VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->indirectMemoryCopy, "VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR::indirectMemoryCopy"};
+        }
+        case Feature::indirectMemoryToImageCopy: {
+            auto vk_struct = const_cast<VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->indirectMemoryToImageCopy,
+                    "VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR::indirectMemoryToImageCopy"};
+        }
         case Feature::indirectCopy: {
             auto vk_struct = const_cast<VkPhysicalDeviceCopyMemoryIndirectFeaturesNV *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceCopyMemoryIndirectFeaturesNV>(*inout_pnext_chain));

@@ -107,6 +107,10 @@ struct DeviceFeatures {
     bool cooperativeMatrix;
     // VkPhysicalDeviceCooperativeMatrixFeaturesKHR, VkPhysicalDeviceCooperativeMatrixFeaturesNV
     bool cooperativeMatrixRobustBufferAccess;
+    // VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR
+    bool indirectMemoryCopy;
+    // VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR
+    bool indirectMemoryToImageCopy;
     // VkPhysicalDeviceCopyMemoryIndirectFeaturesNV
     bool indirectCopy;
     // VkPhysicalDeviceCornerSampledImageFeaturesNV

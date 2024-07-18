@@ -1675,6 +1675,24 @@ bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_FEATURES_KHR: {  // Covers
+                                                                                     // VUID-VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR);
+                if (!IsExtEnabled(device_extensions.vk_khr_copy_memory_indirect)) {
+                    skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                     "includes a pointer to a VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR, but when creating "
+                                     "VkDevice, the parent extension "
+                                     "(VK_KHR_copy_memory_indirect) was not included in ppEnabledExtensionNames.");
+                }
+                VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR* structure = (VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::indirectMemoryCopy), structure->indirectMemoryCopy);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::indirectMemoryToImageCopy), structure->indirectMemoryToImageCopy);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceShaderRelaxedExtendedInstructionFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_RELAXED_EXTENDED_INSTRUCTION_FEATURES_KHR: {  // Covers
                                                                                                     // VUID-VkPhysicalDeviceShaderRelaxedExtendedInstructionFeaturesKHR-sType-sType
@@ -4567,6 +4585,9 @@ bool StatelessValidation::ValidatePnextPropertyStructContents(const Location& lo
         // No Validation code for VkPhysicalDeviceMaintenance6PropertiesKHR structure members  -- Covers
         // VUID-VkPhysicalDeviceMaintenance6PropertiesKHR-sType-sType
 
+        // No Validation code for VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR structure members  -- Covers
+        // VUID-VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR-sType-sType
+
         // No Validation code for VkPhysicalDeviceMaintenance7PropertiesKHR structure members  -- Covers
         // VUID-VkPhysicalDeviceMaintenance7PropertiesKHR-sType-sType
 
@@ -4783,9 +4804,6 @@ bool StatelessValidation::ValidatePnextPropertyStructContents(const Location& lo
 
         // No Validation code for VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM structure members  -- Covers
         // VUID-VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM-sType-sType
-
-        // No Validation code for VkPhysicalDeviceCopyMemoryIndirectPropertiesNV structure members  -- Covers
-        // VUID-VkPhysicalDeviceCopyMemoryIndirectPropertiesNV-sType-sType
 
         // No Validation code for VkPhysicalDeviceMemoryDecompressionPropertiesNV structure members  -- Covers
         // VUID-VkPhysicalDeviceMemoryDecompressionPropertiesNV-sType-sType
@@ -10094,6 +10112,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONDITIONAL_RENDERING_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_NV,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CORNER_SAMPLED_IMAGE_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COVERAGE_REDUCTION_MODE_FEATURES_NV,
@@ -13514,7 +13533,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2(VkPhysical
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONSERVATIVE_RASTERIZATION_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_NV,
-            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_PROPERTIES_NV,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES,
@@ -20155,6 +20174,43 @@ bool StatelessValidation::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers
     return skip;
 }
 
+bool StatelessValidation::PreCallValidateCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
+                                                                  uint32_t copyCount, uint32_t stride,
+                                                                  const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_khr_copy_memory_indirect) && loc.function == vvl::Func::vkCmdCopyMemoryIndirectKHR)
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_copy_memory_indirect});
+    // No xml-driven validation
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateCmdCopyMemoryToImageIndirectKHR(
+    VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount, uint32_t stride, VkImage dstImage,
+    VkImageLayout dstImageLayout, const VkImageSubresourceLayers* pImageSubresources, const ErrorObject& error_obj) const {
+    bool skip = false;
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(device_extensions.vk_khr_copy_memory_indirect) &&
+        loc.function == vvl::Func::vkCmdCopyMemoryToImageIndirectKHR)
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_copy_memory_indirect});
+    skip |= ValidateRequiredHandle(loc.dot(Field::dstImage), dstImage);
+    skip |= ValidateRangedEnum(loc.dot(Field::dstImageLayout), vvl::Enum::VkImageLayout, dstImageLayout,
+                               "VUID-vkCmdCopyMemoryToImageIndirectKHR-dstImageLayout-parameter");
+    skip |= ValidateArray(loc.dot(Field::copyCount), loc.dot(Field::pImageSubresources), copyCount, &pImageSubresources, true, true,
+                          "VUID-vkCmdCopyMemoryToImageIndirectKHR-copyCount-arraylength",
+                          "VUID-vkCmdCopyMemoryToImageIndirectKHR-pImageSubresources-parameter");
+    if (pImageSubresources != nullptr) {
+        for (uint32_t copyIndex = 0; copyIndex < copyCount; ++copyIndex) {
+            [[maybe_unused]] const Location pImageSubresources_loc = loc.dot(Field::pImageSubresources, copyIndex);
+            skip |= ValidateFlags(pImageSubresources_loc.dot(Field::aspectMask), vvl::FlagBitmask::VkImageAspectFlagBits,
+                                  AllVkImageAspectFlagBits, pImageSubresources[copyIndex].aspectMask, kRequiredFlags,
+                                  "VUID-VkImageSubresourceLayers-aspectMask-parameter",
+                                  "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask");
+        }
+    }
+    return skip;
+}
+
 bool StatelessValidation::PreCallValidateCreateDebugReportCallbackEXT(VkInstance instance,
                                                                       const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                                                       const VkAllocationCallbacks* pAllocator,
@@ -25110,7 +25166,7 @@ bool StatelessValidation::PreCallValidateCmdCopyMemoryIndirectNV(VkCommandBuffer
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(device_extensions.vk_nv_copy_memory_indirect))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_copy_memory_indirect});
-    // No xml-driven validation
+    skip |= PreCallValidateCmdCopyMemoryIndirectKHR(commandBuffer, copyBufferAddress, copyCount, stride, error_obj);
     return skip;
 }
 
@@ -25121,21 +25177,8 @@ bool StatelessValidation::PreCallValidateCmdCopyMemoryToImageIndirectNV(
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(device_extensions.vk_nv_copy_memory_indirect))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_copy_memory_indirect});
-    skip |= ValidateRequiredHandle(loc.dot(Field::dstImage), dstImage);
-    skip |= ValidateRangedEnum(loc.dot(Field::dstImageLayout), vvl::Enum::VkImageLayout, dstImageLayout,
-                               "VUID-vkCmdCopyMemoryToImageIndirectNV-dstImageLayout-parameter");
-    skip |= ValidateArray(loc.dot(Field::copyCount), loc.dot(Field::pImageSubresources), copyCount, &pImageSubresources, true, true,
-                          "VUID-vkCmdCopyMemoryToImageIndirectNV-copyCount-arraylength",
-                          "VUID-vkCmdCopyMemoryToImageIndirectNV-pImageSubresources-parameter");
-    if (pImageSubresources != nullptr) {
-        for (uint32_t copyIndex = 0; copyIndex < copyCount; ++copyIndex) {
-            [[maybe_unused]] const Location pImageSubresources_loc = loc.dot(Field::pImageSubresources, copyIndex);
-            skip |= ValidateFlags(pImageSubresources_loc.dot(Field::aspectMask), vvl::FlagBitmask::VkImageAspectFlagBits,
-                                  AllVkImageAspectFlagBits, pImageSubresources[copyIndex].aspectMask, kRequiredFlags,
-                                  "VUID-VkImageSubresourceLayers-aspectMask-parameter",
-                                  "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask");
-        }
-    }
+    skip |= PreCallValidateCmdCopyMemoryToImageIndirectKHR(commandBuffer, copyBufferAddress, copyCount, stride, dstImage,
+                                                           dstImageLayout, pImageSubresources, error_obj);
     return skip;
 }
 

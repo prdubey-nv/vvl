@@ -993,6 +993,13 @@ bool PreCallValidateCmdSetDescriptorBufferOffsets2EXT(VkCommandBuffer commandBuf
 bool PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
     VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
     const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount,
+                                             uint32_t stride, const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
+                                                    uint32_t copyCount, uint32_t stride, VkImage dstImage,
+                                                    VkImageLayout dstImageLayout,
+                                                    const VkImageSubresourceLayers* pImageSubresources,
+                                                    const ErrorObject& error_obj) const override;
 bool PreCallValidateCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback,
                                                  const ErrorObject& error_obj) const override;

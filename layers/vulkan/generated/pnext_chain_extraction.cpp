@@ -1263,6 +1263,16 @@ void PnextChainFree(void *chain) {
             header->pNext = nullptr;
             delete reinterpret_cast<const VkBindMemoryStatusKHR *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_FEATURES_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_PROPERTIES_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceCopyMemoryIndirectPropertiesKHR *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_RELAXED_EXTENDED_INSTRUCTION_FEATURES_KHR:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;
@@ -2618,11 +2628,6 @@ void PnextChainFree(void *chain) {
             PnextChainFree(header->pNext);
             header->pNext = nullptr;
             delete reinterpret_cast<const VkPhysicalDeviceCopyMemoryIndirectFeaturesNV *>(header);
-            break;
-        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_PROPERTIES_NV:
-            PnextChainFree(header->pNext);
-            header->pNext = nullptr;
-            delete reinterpret_cast<const VkPhysicalDeviceCopyMemoryIndirectPropertiesNV *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_FEATURES_NV:
             PnextChainFree(header->pNext);

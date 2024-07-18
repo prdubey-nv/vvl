@@ -5600,6 +5600,25 @@ void DispatchCmdBindDescriptorBufferEmbeddedSamplers2EXT(
         commandBuffer, (const VkBindDescriptorBufferEmbeddedSamplersInfoEXT*)local_pBindDescriptorBufferEmbeddedSamplersInfo);
 }
 
+void DispatchCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount,
+                                      uint32_t stride) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+
+    layer_data->device_dispatch_table.CmdCopyMemoryIndirectKHR(commandBuffer, copyBufferAddress, copyCount, stride);
+}
+
+void DispatchCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount,
+                                             uint32_t stride, VkImage dstImage, VkImageLayout dstImageLayout,
+                                             const VkImageSubresourceLayers* pImageSubresources) {
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
+    if (!wrap_handles)
+        return layer_data->device_dispatch_table.CmdCopyMemoryToImageIndirectKHR(
+            commandBuffer, copyBufferAddress, copyCount, stride, dstImage, dstImageLayout, pImageSubresources);
+    { dstImage = layer_data->Unwrap(dstImage); }
+    layer_data->device_dispatch_table.CmdCopyMemoryToImageIndirectKHR(commandBuffer, copyBufferAddress, copyCount, stride, dstImage,
+                                                                      dstImageLayout, pImageSubresources);
+}
+
 VkResult DispatchCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);

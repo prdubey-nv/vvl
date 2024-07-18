@@ -141,6 +141,7 @@ vvl::Extension GetExtension(std::string extension) {
         {"VK_KHR_calibrated_timestamps", vvl::Extension::_VK_KHR_calibrated_timestamps},
         {"VK_KHR_shader_expect_assume", vvl::Extension::_VK_KHR_shader_expect_assume},
         {"VK_KHR_maintenance6", vvl::Extension::_VK_KHR_maintenance6},
+        {"VK_KHR_copy_memory_indirect", vvl::Extension::_VK_KHR_copy_memory_indirect},
         {"VK_KHR_shader_relaxed_extended_instruction", vvl::Extension::_VK_KHR_shader_relaxed_extended_instruction},
         {"VK_KHR_maintenance7", vvl::Extension::_VK_KHR_maintenance7},
         {"VK_EXT_debug_report", vvl::Extension::_VK_EXT_debug_report},

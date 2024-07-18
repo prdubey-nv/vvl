@@ -102,6 +102,10 @@ enum class Feature {
     cooperativeMatrix,
     // VkPhysicalDeviceCooperativeMatrixFeaturesKHR, VkPhysicalDeviceCooperativeMatrixFeaturesNV
     cooperativeMatrixRobustBufferAccess,
+    // VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR
+    indirectMemoryCopy,
+    // VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR
+    indirectMemoryToImageCopy,
     // VkPhysicalDeviceCopyMemoryIndirectFeaturesNV
     indirectCopy,
     // VkPhysicalDeviceCornerSampledImageFeaturesNV

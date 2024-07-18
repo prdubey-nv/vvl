@@ -643,6 +643,13 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->maintenance6 |= enabled->maintenance6 == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_FEATURES_KHR: {
+                const VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceCopyMemoryIndirectFeaturesKHR *>(pNext);
+                features->indirectMemoryCopy |= enabled->indirectMemoryCopy == VK_TRUE;
+                features->indirectMemoryToImageCopy |= enabled->indirectMemoryToImageCopy == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_RELAXED_EXTENDED_INSTRUCTION_FEATURES_KHR: {
                 const VkPhysicalDeviceShaderRelaxedExtendedInstructionFeaturesKHR *enabled =
                     reinterpret_cast<const VkPhysicalDeviceShaderRelaxedExtendedInstructionFeaturesKHR *>(pNext);

@@ -140,6 +140,8 @@ DeprecationData GetDeprecatedData(vvl::Extension extension_name) {
         {vvl::Extension::_VK_EXT_extended_dynamic_state2, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_EXT_global_priority_query, {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_global_priority}}},
         {vvl::Extension::_VK_EXT_load_store_op_none, {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_load_store_op_none}}},
+        {vvl::Extension::_VK_NV_copy_memory_indirect,
+         {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_copy_memory_indirect}}},
     };
 
     auto it = deprecated_extensions.find(extension_name);
