@@ -19,7 +19,52 @@
 #include <sys/mman.h>
 #endif
 
-class NegativeMemory : public VkLayerTest {};
+class NegativeMemory : public VkLayerTest {
+  public:
+    void CreateAndBindBuffer(vkt::Device *device, VkDeviceSize bufferSize, VkDeviceSize memSize, VkBufferUsageFlags usage,
+                             VkMemoryAllocateFlags allocFlags, vkt::Buffer &buffer, vkt::DeviceMemory &bufferMemory,
+                             void **bufferAddress);
+};
+
+void NegativeMemory::CreateAndBindBuffer(vkt::Device *device, VkDeviceSize bufferSize, VkDeviceSize memSize,
+                                         VkBufferUsageFlags usage, VkMemoryAllocateFlags allocFlags, vkt::Buffer &buffer,
+                                         vkt::DeviceMemory &bufferMemory, void **bufferAddress) {
+    VkBufferCreateInfo bufferCreateInfo = vku::InitStructHelper();
+    bufferCreateInfo.size = bufferSize;
+    bufferCreateInfo.usage = usage;
+    buffer = vkt::Buffer(*device, bufferCreateInfo, vkt::no_mem);
+
+    VkMemoryRequirements memRequirements;
+    vk::GetBufferMemoryRequirements(device->handle(), buffer.handle(), &memRequirements);
+
+    VkMemoryAllocateFlagsInfo allocFlagsInfo = vku::InitStructHelper();
+    allocFlagsInfo.flags = allocFlags;
+
+    VkMemoryAllocateInfo allocInfo = vku::InitStructHelper(&allocFlagsInfo);
+    allocInfo.allocationSize = memSize;
+
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vk::GetPhysicalDeviceMemoryProperties(device->phy(), &memProperties);
+
+    std::optional<uint32_t> memTypeIndex;
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i) {
+        if ((memRequirements.memoryTypeBits & (1 << i)) &&
+            (memProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
+            memTypeIndex = i;
+            break;
+        }
+    }
+
+    if (!memTypeIndex.has_value()) {
+        throw std::runtime_error("Failed to find appropriate memory type!");
+    }
+
+    allocInfo.memoryTypeIndex = memTypeIndex.value();
+    bufferMemory = vkt::DeviceMemory(*device, allocInfo);
+    vk::BindBufferMemory(device->handle(), buffer.handle(), bufferMemory.handle(), 0);
+
+    vk::MapMemory(device->handle(), bufferMemory.handle(), 0, VK_WHOLE_SIZE, 0, bufferAddress);
+}
 
 TEST_F(NegativeMemory, MapMemory) {
     TEST_DESCRIPTION("Attempt to map memory in a number of incorrect ways");
@@ -2357,55 +2402,26 @@ TEST_F(NegativeMemory, IndirectMemoryCopyEnabled) {
     cmd2.size = 0;
 
     VkCopyMemoryIndirectCommandKHR cmds[2] = {cmd1, cmd2};
-    
-    // Create & bind buffer
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 2 * sizeof(VkCopyMemoryIndirectCommandKHR);
-    buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
 
-    // Allocate memory
-    VkMemoryRequirements memRequirements;
-    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &memRequirements);
-    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
-    alloc_info.allocationSize = 2 * sizeof(VkCopyMemoryIndirectCommandKHR);
-    VkPhysicalDeviceMemoryProperties memProperties;
-    vk::GetPhysicalDeviceMemoryProperties(m_device->phy(), &memProperties);
-    // Select appropriate memory type
-    std::optional<uint32_t> memTypeIndex;
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i) {
-        if ((memRequirements.memoryTypeBits & (1 << i)) &&
-            (memProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
-            memTypeIndex = i;
-            break;
-        }
-    }
-    if (!memTypeIndex.has_value()) {
-        throw std::runtime_error("Failed to find appropriate memory type!");
-    }
-    alloc_info.memoryTypeIndex = memTypeIndex.value();
-    vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
-    vk::BindBufferMemory(device(), buffer.handle(), buffer_memory.handle(), 0);
-
-    // Copy commands to buffer
-    void *data;
-    vk::MapMemory(device(), buffer_memory.handle(), 0, VK_WHOLE_SIZE, 0, &data);
-    memcpy(data, &cmds, sizeof(cmds));
-    vk::UnmapMemory(device(), buffer_memory.handle());
+    // Create & bind indirectBuffer
+    vkt::Buffer indirectBuffer;
+    vkt::DeviceMemory indirectBufferMemory;
+    void *indirectBufferAddress;
+    CreateAndBindBuffer(m_device, sizeof(cmds), sizeof(cmds), VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                        VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR, indirectBuffer, indirectBufferMemory, &indirectBufferAddress);
+    memcpy(indirectBufferAddress, &cmds, sizeof(cmds));
 
     uint32_t copyCount = 2, stride = sizeof(VkCopyMemoryIndirectCommandKHR);
-    VkDeviceAddress copyBufferAddress = buffer.address();
 
     m_command_buffer.begin();
 
     // Feature disabled
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryIndirectNV-None-07653");
-    vk::CmdCopyMemoryIndirectKHR(m_command_buffer, copyBufferAddress, copyCount, stride);
+    vk::CmdCopyMemoryIndirectKHR(m_command_buffer, indirectBuffer.address(), copyCount, stride);
     m_errorMonitor->VerifyFound();
     
     m_command_buffer.end();
+    vk::UnmapMemory(device(), indirectBufferMemory.handle());
 }
 
 TEST_F(NegativeMemory, CopyMemoryIndirect) {
@@ -2429,67 +2445,36 @@ TEST_F(NegativeMemory, CopyMemoryIndirect) {
 
     VkCopyMemoryIndirectCommandKHR cmds[2] = {cmd1, cmd2};
 
-    // Create & bind buffer
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 2 * sizeof(VkCopyMemoryIndirectCommandKHR);
-    buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
-
-    // Allocate memory
-    VkMemoryRequirements memRequirements;
-    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &memRequirements);
-    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
-    alloc_info.allocationSize = 2 * sizeof(VkCopyMemoryIndirectCommandKHR);
-    VkPhysicalDeviceMemoryProperties memProperties;
-    vk::GetPhysicalDeviceMemoryProperties(m_device->phy(), &memProperties);
-    // Select appropriate memory type
-    std::optional<uint32_t> memTypeIndex;
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i) {
-        if ((memRequirements.memoryTypeBits & (1 << i)) &&
-            (memProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
-            memTypeIndex = i;
-            break;
-        }
-    }
-    if (!memTypeIndex.has_value()) {
-        throw std::runtime_error("Failed to find appropriate memory type!");
-    }
-    alloc_info.memoryTypeIndex = memTypeIndex.value();
-    vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
-    vk::BindBufferMemory(device(), buffer.handle(), buffer_memory.handle(), 0);
-
-    // Copy commands to buffer
-    void *data;
-    vk::MapMemory(device(), buffer_memory.handle(), 0, VK_WHOLE_SIZE, 0, &data);
-    memcpy(data, &cmds, sizeof(cmds));
-    vk::UnmapMemory(device(), buffer_memory.handle());
+    // Create & bind indirectBuffer
+    vkt::Buffer indirectBuffer;
+    vkt::DeviceMemory indirectBufferMemory;
+    void *indirectBufferAddress;
+    CreateAndBindBuffer(m_device, sizeof(cmds), sizeof(cmds), VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                        VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR, indirectBuffer, indirectBufferMemory, &indirectBufferAddress);
+    memcpy(indirectBufferAddress, &cmds, sizeof(cmds));
     
     m_command_buffer.begin();
 
     uint32_t copyCount = 2, stride = sizeof(VkCopyMemoryIndirectCommandKHR);
-    VkDeviceAddress copyBufferAddress = buffer.address();
 
     // Not 4-byte aligned
-    copyBufferAddress += 1;
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryIndirectNV-copyBufferAddress-07654");
-    vk::CmdCopyMemoryIndirectKHR(m_command_buffer, copyBufferAddress, copyCount, stride);
+    vk::CmdCopyMemoryIndirectKHR(m_command_buffer, indirectBuffer.address() + 1, copyCount, stride);
     m_errorMonitor->VerifyFound();
-    copyBufferAddress -= 1;
 
     // Stride not 4-divisible
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryIndirectNV-stride-07655");
     stride = sizeof(VkCopyMemoryIndirectCommandKHR) + 1;
-    vk::CmdCopyMemoryIndirectKHR(m_command_buffer, copyBufferAddress, copyCount, stride);
+    vk::CmdCopyMemoryIndirectKHR(m_command_buffer, indirectBuffer.address(), copyCount, stride);
     m_errorMonitor->VerifyFound();
 
     // Stride smaller than sizeof(VkCopyMemoryIndirectCommandKHR)
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryIndirectNV-stride-07655");
     stride = sizeof(VkCopyMemoryIndirectCommandKHR) - 4;
-    vk::CmdCopyMemoryIndirectKHR(m_command_buffer, copyBufferAddress, copyCount, stride);
+    vk::CmdCopyMemoryIndirectKHR(m_command_buffer, indirectBuffer.address(), copyCount, stride);
     m_errorMonitor->VerifyFound();
 
+    vk::UnmapMemory(device(), indirectBufferMemory.handle());
     m_command_buffer.end();
 }
 
@@ -2519,42 +2504,13 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirectEnabled) {
 
     VkCopyMemoryToImageIndirectCommandKHR cmds[2] = {cmd1, cmd2};
 
-    // Create & bind buffer
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 2 * sizeof(VkCopyMemoryToImageIndirectCommandKHR);
-    buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
-
-    // Allocate memory
-    VkMemoryRequirements memRequirements;
-    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &memRequirements);
-    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
-    alloc_info.allocationSize = 2 * sizeof(VkCopyMemoryToImageIndirectCommandKHR);
-    VkPhysicalDeviceMemoryProperties memProperties;
-    vk::GetPhysicalDeviceMemoryProperties(m_device->phy(), &memProperties);
-    // Select appropriate memory type
-    std::optional<uint32_t> memTypeIndex;
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i) {
-        if ((memRequirements.memoryTypeBits & (1 << i)) &&
-            (memProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
-            memTypeIndex = i;
-            break;
-        }
-    }
-    if (!memTypeIndex.has_value()) {
-        throw std::runtime_error("Failed to find appropriate memory type!");
-    }
-    alloc_info.memoryTypeIndex = memTypeIndex.value();
-    vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
-    vk::BindBufferMemory(device(), buffer.handle(), buffer_memory.handle(), 0);
-
-    // Copy commands to buffer
-    void *data;
-    vk::MapMemory(device(), buffer_memory.handle(), 0, VK_WHOLE_SIZE, 0, &data);
-    memcpy(data, &cmds, sizeof(cmds));
-    vk::UnmapMemory(device(), buffer_memory.handle());
+    // Create & bind indirectBuffer
+    vkt::Buffer indirectBuffer;
+    vkt::DeviceMemory indirectBufferMemory;
+    void *indirectBufferAddress;
+    CreateAndBindBuffer(m_device, sizeof(cmds), sizeof(cmds), VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                        VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR, indirectBuffer, indirectBufferMemory, &indirectBufferAddress);
+    memcpy(indirectBufferAddress, &cmds, sizeof(cmds));
 
     // Create dstImage
     VkImage dstImage;
@@ -2578,6 +2534,8 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirectEnabled) {
     vk::GetImageMemoryRequirements(device(), dstImage, &image_mem_reqs);
 
     // Allocate memory for dstImage
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vk::GetPhysicalDeviceMemoryProperties(m_device->phy(), &memProperties);
     std::optional<uint32_t> dstMemType;
     VkMemoryAllocateInfo image_alloc_info = vku::InitStructHelper();
     image_alloc_info.allocationSize = image_mem_reqs.size;
@@ -2611,11 +2569,12 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirectEnabled) {
     m_command_buffer.begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToImageIndirectNV-None-07660");
-    vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, buffer.address(), copyCount, stride, dstImage, dstImageLayout,
+    vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, indirectBuffer.address(), copyCount, stride, dstImage, dstImageLayout,
                                        pImageSubresources);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyImage(*m_device, dstImage, nullptr);
+    vk::UnmapMemory(device(), indirectBufferMemory.handle());
     m_command_buffer.end();
 }
 
@@ -2646,42 +2605,13 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirect) {
 
     VkCopyMemoryToImageIndirectCommandKHR cmds[2] = {cmd1, cmd2};
 
-    // Create & bind buffer
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 2 * sizeof(VkCopyMemoryToImageIndirectCommandKHR);
-    buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
-
-    // Allocate memory
-    VkMemoryRequirements memRequirements;
-    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &memRequirements);
-    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
-    alloc_info.allocationSize = 2 * sizeof(VkCopyMemoryToImageIndirectCommandKHR);
-    VkPhysicalDeviceMemoryProperties memProperties;
-    vk::GetPhysicalDeviceMemoryProperties(m_device->phy(), &memProperties);
-    // Select appropriate memory type
-    std::optional<uint32_t> memTypeIndex;
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i) {
-        if ((memRequirements.memoryTypeBits & (1 << i)) &&
-            (memProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
-            memTypeIndex = i;
-            break;
-        }
-    }
-    if (!memTypeIndex.has_value()) {
-        throw std::runtime_error("Failed to find appropriate memory type!");
-    }
-    alloc_info.memoryTypeIndex = memTypeIndex.value();
-    vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
-    vk::BindBufferMemory(device(), buffer.handle(), buffer_memory.handle(), 0);
-
-    // Copy commands to buffer
-    void *data;
-    vk::MapMemory(device(), buffer_memory.handle(), 0, VK_WHOLE_SIZE, 0, &data);
-    memcpy(data, &cmds, sizeof(cmds));
-    vk::UnmapMemory(device(), buffer_memory.handle());
+    // Create & bind indirectBuffer
+    vkt::Buffer indirectBuffer;
+    vkt::DeviceMemory indirectBufferMemory;
+    void *indirectBufferAddress;
+    CreateAndBindBuffer(m_device, sizeof(cmds), sizeof(cmds), VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                        VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR, indirectBuffer, indirectBufferMemory, &indirectBufferAddress);
+    memcpy(indirectBufferAddress, &cmds, sizeof(cmds));
 
     // Create dstImage
     VkImage dstImage;
@@ -2705,6 +2635,8 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirect) {
     vk::GetImageMemoryRequirements(device(), dstImage, &image_mem_reqs);
 
     // Allocate memory for dstImage
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vk::GetPhysicalDeviceMemoryProperties(m_device->phy(), &memProperties);
     std::optional<uint32_t> dstMemType;
     VkMemoryAllocateInfo image_alloc_info = vku::InitStructHelper();
     image_alloc_info.allocationSize = image_mem_reqs.size + 1; // Not completely bound
@@ -2751,11 +2683,12 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirect) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToImageIndirectNV-mipLevel-07670");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToImageIndirectNV-layerCount-08764");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToImageIndirectNV-stride-07677");
-    vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, buffer.address(), copyCount, stride, dstImage, dstImageLayout,
+    vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, indirectBuffer.address(), copyCount, stride, dstImage, dstImageLayout,
                                         pImageSubresourcesMB);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyImage(*m_device, dstImage, nullptr);
+    vk::UnmapMemory(device(), indirectBufferMemory.handle());
     m_command_buffer.end();
 }
 
@@ -2786,42 +2719,13 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirectLayout) {
 
     VkCopyMemoryToImageIndirectCommandKHR cmds[2] = {cmd1, cmd2};
 
-    // Create & bind buffer
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 2 * sizeof(VkCopyMemoryToImageIndirectCommandKHR);
-    buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
-
-    // Allocate memory
-    VkMemoryRequirements memRequirements;
-    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &memRequirements);
-    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
-    alloc_info.allocationSize = 2 * sizeof(VkCopyMemoryToImageIndirectCommandKHR);
-    VkPhysicalDeviceMemoryProperties memProperties;
-    vk::GetPhysicalDeviceMemoryProperties(m_device->phy(), &memProperties);
-    // Select appropriate memory type
-    std::optional<uint32_t> memTypeIndex;
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i) {
-        if ((memRequirements.memoryTypeBits & (1 << i)) &&
-            (memProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
-            memTypeIndex = i;
-            break;
-        }
-    }
-    if (!memTypeIndex.has_value()) {
-        throw std::runtime_error("Failed to find appropriate memory type!");
-    }
-    alloc_info.memoryTypeIndex = memTypeIndex.value();
-    vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
-    vk::BindBufferMemory(device(), buffer.handle(), buffer_memory.handle(), 0);
-
-    // Copy commands to buffer
-    void *data;
-    vk::MapMemory(device(), buffer_memory.handle(), 0, VK_WHOLE_SIZE, 0, &data);
-    memcpy(data, &cmds, sizeof(cmds));
-    vk::UnmapMemory(device(), buffer_memory.handle());
+    // Create & bind indirectBuffer
+    vkt::Buffer indirectBuffer;
+    vkt::DeviceMemory indirectBufferMemory;
+    void *indirectBufferAddress;
+    CreateAndBindBuffer(m_device, sizeof(cmds), sizeof(cmds), VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                        VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR, indirectBuffer, indirectBufferMemory, &indirectBufferAddress);
+    memcpy(indirectBufferAddress, &cmds, sizeof(cmds));
 
     // Create pImageSubresources
     const uint32_t copyCount = 2, stride = sizeof(VkCopyMemoryToImageIndirectCommandKHR);
@@ -2871,10 +2775,11 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirectLayout) {
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToImageIndirectNV-dstImageLayout-07667");
-    vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, buffer.address(), copyCount, stride, dst_image, dstImageLayout,
+    vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, indirectBuffer.address(), copyCount, stride, dst_image, dstImageLayout,
                                         pImageSubresources);
     m_errorMonitor->VerifyFound();
 
+    vk::UnmapMemory(device(), indirectBufferMemory.handle());
     m_command_buffer.end();
 }
 
