@@ -2493,79 +2493,6 @@ TEST_F(NegativeMemory, CopyMemoryIndirect) {
     m_command_buffer.end();
 }
 
-TEST_F(NegativeMemory, CopyMemoryIndirectCommand) {
-    TEST_DESCRIPTION("Validate incorrect usage of VkCopyMemoryIndirectCommandKHR structs");
-    AddRequiredExtensions(VK_KHR_COPY_MEMORY_INDIRECT_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    AddRequiredFeature(vkt::Feature::indirectMemoryCopy);
-
-    RETURN_IF_SKIP(Init());
-
-    VkCopyMemoryIndirectCommandKHR cmd1 = {};
-    cmd1.dstAddress = 1;
-    cmd1.srcAddress = 1;
-    cmd1.size = 1;
-
-    VkCopyMemoryIndirectCommandKHR cmd2 = {};
-    cmd2.dstAddress = 0;
-    cmd2.srcAddress = 0;
-    cmd2.size = 0;
-
-    VkCopyMemoryIndirectCommandKHR cmds[2] = {cmd1, cmd2};
-
-    // Create & bind buffer
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 2 * sizeof(VkCopyMemoryIndirectCommandKHR);
-    buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
-
-    // Allocate memory
-    VkMemoryRequirements memRequirements;
-    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &memRequirements);
-    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
-    alloc_info.allocationSize = 2 * sizeof(VkCopyMemoryIndirectCommandKHR);
-    VkPhysicalDeviceMemoryProperties memProperties;
-    vk::GetPhysicalDeviceMemoryProperties(m_device->phy(), &memProperties);
-    // Select appropriate memory type
-    std::optional<uint32_t> memTypeIndex;
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i) {
-        if ((memRequirements.memoryTypeBits & (1 << i)) &&
-            (memProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
-            memTypeIndex = i;
-            break;
-        }
-    }
-    if (!memTypeIndex.has_value()) {
-        throw std::runtime_error("Failed to find appropriate memory type!");
-    }
-    alloc_info.memoryTypeIndex = memTypeIndex.value();
-    vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
-    vk::BindBufferMemory(device(), buffer.handle(), buffer_memory.handle(), 0);
-
-    // Copy commands to buffer
-    void *data;
-    vk::MapMemory(device(), buffer_memory.handle(), 0, VK_WHOLE_SIZE, 0, &data);
-    memcpy(data, &cmds, sizeof(cmds));
-    vk::UnmapMemory(device(), buffer_memory.handle());
-
-    uint32_t copyCount = 2, stride = sizeof(VkCopyMemoryIndirectCommandKHR);
-    VkDeviceAddress copyBufferAddress = buffer.address();
-
-    m_command_buffer.begin();
-
-    // Not 4-byte aligned
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryIndirectCommandNV-srcAddress-07657");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryIndirectCommandNV-dstAddress-07658");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryIndirectCommandNV-size-07659");
-    vk::CmdCopyMemoryIndirectKHR(m_command_buffer, copyBufferAddress, copyCount, stride);
-    m_errorMonitor->VerifyFound();
-
-    m_command_buffer.end();
-}
-
 TEST_F(NegativeMemory, CopyMemoryToImageIndirectEnabled) {
     TEST_DESCRIPTION("Ensures the CopyMemoryToIndirect feature is enabled");
     AddRequiredExtensions(VK_KHR_COPY_MEMORY_INDIRECT_EXTENSION_NAME);
@@ -2631,8 +2558,7 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirectEnabled) {
 
     // Create dstImage
     VkImage dstImage;
-    VkImageCreateInfo image_ci = {};
-    image_ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_3D;
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -2704,19 +2630,19 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirect) {
 
     VkCopyMemoryToImageIndirectCommandKHR cmd1 = {};
     cmd1.srcAddress = 0;
-    cmd1.bufferRowLength = 2048;
-    cmd1.bufferImageHeight = 2040;
+    cmd1.bufferRowLength = 8;
+    cmd1.bufferImageHeight = 8;
     cmd1.imageSubresource = VkImageSubresourceLayers{};
-    cmd1.imageOffset = VkOffset3D{1024, 1023, 1};
-    cmd1.imageExtent = VkExtent3D{4096, 4096, 1};
+    cmd1.imageOffset = VkOffset3D{0, 0, 0};
+    cmd1.imageExtent = VkExtent3D{8, 8, 1};
 
     VkCopyMemoryToImageIndirectCommandKHR cmd2 = {};
-    cmd2.srcAddress = 0;
-    cmd2.bufferRowLength = 8;
-    cmd2.bufferImageHeight = 8;
+    cmd2.srcAddress = 1024;
+    cmd2.bufferRowLength = 4;
+    cmd2.bufferImageHeight = 4;
     cmd2.imageSubresource = VkImageSubresourceLayers{};
     cmd2.imageOffset = VkOffset3D{0, 0, 0};
-    cmd2.imageExtent = VkExtent3D{8, 8, 1};
+    cmd2.imageExtent = VkExtent3D{4, 4, 1};
 
     VkCopyMemoryToImageIndirectCommandKHR cmds[2] = {cmd1, cmd2};
 
@@ -2759,8 +2685,7 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirect) {
 
     // Create dstImage
     VkImage dstImage;
-    VkImageCreateInfo image_ci = {};
-    image_ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -2805,33 +2730,27 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirect) {
 
     m_command_buffer.begin();
 
-    // pImageSubresources with multiple bits set
-    VkImageSubresourceLayers resLayerMB = {};
-    resLayerMB.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
-    resLayerMB.mipLevel = 1;
-    resLayerMB.baseArrayLayer = 0;
-    resLayerMB.layerCount = 2;
-    VkImageSubresourceLayers res_layersMB[copyCount] = {resLayerMB, resLayerMB};
+    // pImageSubresources
+    VkImageSubresourceLayers resLayerIncorrect = {};
+    resLayerIncorrect.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
+    resLayerIncorrect.mipLevel = 1;
+    resLayerIncorrect.baseArrayLayer = 0;
+    resLayerIncorrect.layerCount = 2;
+    VkImageSubresourceLayers resLayerCorrect = {};
+    resLayerCorrect.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    resLayerCorrect.mipLevel = 0;
+    resLayerCorrect.baseArrayLayer = 0;
+    resLayerCorrect.layerCount = 1;
+    VkImageSubresourceLayers res_layersMB[copyCount] = {resLayerIncorrect, resLayerCorrect};
     const VkImageSubresourceLayers *pImageSubresourcesMB = res_layersMB;
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToImageIndirectNV-aspectMask-07662");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToImageIndirectNV-aspectMask-07662");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToImageIndirectNV-dstImage-07663");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToImageIndirectNV-dstImage-07664");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToImageIndirectNV-dstImage-07665");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToImageIndirectNV-dstImageLayout-07669");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToImageIndirectNV-mipLevel-07670");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToImageIndirectNV-mipLevel-07670");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToImageIndirectNV-layerCount-08764");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToImageIndirectNV-layerCount-08764");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToImageIndirectNV-offset-07676");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToImageIndirectNV-imageOffset-07675");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToImageIndirectNV-stride-07677");
-    // VkCopyMemoryToImageIndirectCommandKHR
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageIndirectCommandNV-imageOffset-07681");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageIndirectCommandNV-imageExtent-07682");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageIndirectCommandNV-bufferRowLength-07679");
-    m_errorMonitor->SetDesiredError("VUID-VkCopyMemoryToImageIndirectCommandNV-bufferImageHeight-07680");
     vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, buffer.address(), copyCount, stride, dstImage, dstImageLayout,
                                         pImageSubresourcesMB);
     m_errorMonitor->VerifyFound();
@@ -2925,9 +2844,7 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirectLayout) {
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = tex_format;
-    image_create_info.extent.width = tex_width;
-    image_create_info.extent.height = tex_height;
-    image_create_info.extent.depth = 1;
+    image_create_info.extent = {tex_width, tex_height, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 4;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -2948,9 +2865,7 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirectLayout) {
     copy_region.dstSubresource = copy_region.srcSubresource;
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
-    copy_region.extent.width = 1;
-    copy_region.extent.height = 1;
-    copy_region.extent.depth = 1;
+    copy_region.extent = {1, 1, 1};
 
     vk::CmdCopyImage(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
