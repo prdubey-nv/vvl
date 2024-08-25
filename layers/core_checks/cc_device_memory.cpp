@@ -2435,7 +2435,7 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer 
     auto dst_image_state = Get<vvl::Image>(dstImage);
     ASSERT_AND_RETURN_SKIP(dst_image_state);
     if (!dst_image_state->unprotected) {
-        const LogObjectList objlist(cb_state.Handle(), dstImage);
+        const LogObjectList objlist(commandBuffer, dstImage);
         skip |= LogError("VUID-vkCmdCopyMemoryToImageIndirectNV-dstImage-07661", objlist, error_obj.location.dot(Field::dstImage),
                          "must not be a protected image.");
     }
@@ -2458,7 +2458,8 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer 
             // mipLevels
             const uint32_t mip_level = subresource_layers.mipLevel;
             if (mip_level >= dst_image_state->create_info.mipLevels) {
-                skip |= LogError("VUID-vkCmdCopyMemoryToImageIndirectNV-mipLevel-07670", commandBuffer,
+                const LogObjectList objlist(commandBuffer, dstImage);
+                skip |= LogError("VUID-vkCmdCopyMemoryToImageIndirectNV-mipLevel-07670", objlist,
                                  subresource_loc.dot(Field::mipLevel),
                                  "(%u) of region (%d) must be less than the mipLevels (%u) specified in "
                                  "VkImageCreateInfo when dstImage was created.",
@@ -2467,7 +2468,7 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer 
 
             if (pImageSubresources->layerCount != VK_REMAINING_ARRAY_LAYERS &&
                 subresource_layers.baseArrayLayer + subresource_layers.layerCount > dst_image_state->create_info.arrayLayers) {
-                const LogObjectList objlist(cb_state.Handle(), dstImage);
+                const LogObjectList objlist(commandBuffer, dstImage);
                 skip |= LogError(
                     "VUID-vkCmdCopyMemoryToImageIndirectNV-layerCount-08764", objlist, subresource_loc.dot(Field::layerCount),
                     "The specified baseArrayLayer (%u) + layerCount (%u) of region (%d) must be less than or equal to "
@@ -2490,7 +2491,7 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer 
     }
 
     if (!(dst_image_state->create_info.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
-        const LogObjectList objlist(cb_state.Handle(), dstImage);
+        const LogObjectList objlist(commandBuffer, dstImage);
         skip |= LogError("VUID-vkCmdCopyMemoryToImageIndirectNV-dstImage-07664", objlist, error_obj.location.dot(Field::dstImage),
                          "was created with usage (%s) which is missing VK_IMAGE_USAGE_TRANSFER_DST_BIT.", string_VkImageUsageFlags(dst_image_state->create_info.usage).c_str());
     }
@@ -2503,7 +2504,7 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer 
         if (!dst_image_state->Binding() || !dst_image_state->Binding()->memory_state || dst_image_state->Binding()->memory_offset != 0 || 
             dst_image_state->Binding()->resource_offset + memRequirements.size !=
             dst_image_state->Binding()->memory_state->allocate_info.allocationSize) {
-            const LogObjectList objlist(cb_state.Handle(), dstImage);
+            const LogObjectList objlist(commandBuffer, dstImage);
             skip |= LogError("VUID-vkCmdCopyMemoryToImageIndirectNV-dstImage-07665", objlist, error_obj.location.dot(Field::dstImage),
                              "is non-sparse, but it is not bound completely and contiguously to a single VkDeviceMemory object.");
         }
@@ -2511,7 +2512,7 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer 
 
     // dstImage sample count
     if (dst_image_state->create_info.samples != VK_SAMPLE_COUNT_1_BIT) {
-        const LogObjectList objlist(cb_state.Handle(), dstImage);
+        const LogObjectList objlist(commandBuffer, dstImage);
         skip |= LogError("VUID-vkCmdCopyMemoryToImageIndirectKHR-dstImage-07973", objlist, error_obj.location.dot(Field::dstImage),
                          "is created with %s but needs to be VK_SAMPLE_COUNT_1_BIT.",
                          string_VkSampleCountFlagBits(dst_image_state->create_info.samples));
@@ -2522,13 +2523,13 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer 
 
     if (!IsValueIn(dstImageLayout,
                     {VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR, VK_IMAGE_LAYOUT_GENERAL})) {
-        const LogObjectList objlist(cb_state.Handle(), dstImage);
+        const LogObjectList objlist(commandBuffer, dstImage);
         skip |= LogError("VUID-vkCmdCopyMemoryToImageIndirectNV-dstImageLayout-07669", objlist,
                          error_obj.location.dot(Field::dstImageLayout), "is %s.", string_VkImageLayout(dstImageLayout));
     }
 
     if (dst_image_state->create_info.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
-        const LogObjectList objlist(cb_state.Handle(), dstImage);
+        const LogObjectList objlist(commandBuffer, dstImage);
         skip |= LogError("VUID-vkCmdCopyMemoryToImageIndirectNV-dstImage-07673", objlist, error_obj.location.dot(Field::dstImage),
                          "is created with %s (which contains VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT).",
                          string_VkImageCreateFlagBits((VkImageCreateFlagBits)dst_image_state->create_info.flags));
