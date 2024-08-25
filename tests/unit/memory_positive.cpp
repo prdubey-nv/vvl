@@ -55,14 +55,12 @@ void PositiveMemory::CreateAndBindBuffer(vkt::Device *device, VkDeviceSize buffe
     }
 
     if (!memTypeIndex.has_value()) {
-        throw std::runtime_error("Failed to find appropriate memory type!");
+        GTEST_SKIP() << "Failed to find appropriate memory type!";
     }
 
     allocInfo.memoryTypeIndex = memTypeIndex.value();
     bufferMemory = vkt::DeviceMemory(*device, allocInfo);
     vk::BindBufferMemory(device->handle(), buffer.handle(), bufferMemory.handle(), 0);
-
-    vk::MapMemory(device->handle(), bufferMemory.handle(), 0, VK_WHOLE_SIZE, 0, bufferAddress);
 }
 
 TEST_F(PositiveMemory, MapMemory2) {
@@ -642,6 +640,8 @@ TEST_F(PositiveMemory, CopyMemoryIndirect) {
     void *indirectBufferAddress;
     CreateAndBindBuffer(m_device, sizeof(cmds), sizeof(cmds), VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                         VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR, indirectBuffer, indirectBufferMemory, &indirectBufferAddress);
+
+    vk::MapMemory(m_device->handle(), indirectBufferMemory.handle(), 0, VK_WHOLE_SIZE, 0, &indirectBufferAddress);
     memcpy(indirectBufferAddress, &cmds, sizeof(cmds));
     
     
@@ -688,6 +688,8 @@ TEST_F(PositiveMemory, CopyMemoryToImageIndirect) {
     void *indirectBufferAddress;
     CreateAndBindBuffer(m_device, sizeof(cmds), sizeof(cmds), VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                         VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR, indirectBuffer, indirectBufferMemory, &indirectBufferAddress);
+
+    vk::MapMemory(m_device->handle(), indirectBufferMemory.handle(), 0, VK_WHOLE_SIZE, 0, &indirectBufferAddress);
     memcpy(indirectBufferAddress, &cmds, sizeof(cmds));
 
     // Create pImageSubresources

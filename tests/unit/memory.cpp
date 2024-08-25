@@ -56,14 +56,12 @@ void NegativeMemory::CreateAndBindBuffer(vkt::Device *device, VkDeviceSize buffe
     }
 
     if (!memTypeIndex.has_value()) {
-        throw std::runtime_error("Failed to find appropriate memory type!");
+        GTEST_SKIP() << "Failed to find appropriate memory type!";
     }
 
     allocInfo.memoryTypeIndex = memTypeIndex.value();
     bufferMemory = vkt::DeviceMemory(*device, allocInfo);
     vk::BindBufferMemory(device->handle(), buffer.handle(), bufferMemory.handle(), 0);
-
-    vk::MapMemory(device->handle(), bufferMemory.handle(), 0, VK_WHOLE_SIZE, 0, bufferAddress);
 }
 
 TEST_F(NegativeMemory, MapMemory) {
@@ -2409,6 +2407,7 @@ TEST_F(NegativeMemory, IndirectMemoryCopyEnabled) {
     void *indirectBufferAddress;
     CreateAndBindBuffer(m_device, sizeof(cmds), sizeof(cmds), VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                         VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR, indirectBuffer, indirectBufferMemory, &indirectBufferAddress);
+    vk::MapMemory(m_device->handle(), indirectBufferMemory.handle(), 0, VK_WHOLE_SIZE, 0, &indirectBufferAddress);
     memcpy(indirectBufferAddress, &cmds, sizeof(cmds));
 
     uint32_t copyCount = 2, stride = sizeof(VkCopyMemoryIndirectCommandKHR);
@@ -2451,6 +2450,7 @@ TEST_F(NegativeMemory, CopyMemoryIndirect) {
     void *indirectBufferAddress;
     CreateAndBindBuffer(m_device, sizeof(cmds), sizeof(cmds), VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                         VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR, indirectBuffer, indirectBufferMemory, &indirectBufferAddress);
+    vk::MapMemory(m_device->handle(), indirectBufferMemory.handle(), 0, VK_WHOLE_SIZE, 0, &indirectBufferAddress);
     memcpy(indirectBufferAddress, &cmds, sizeof(cmds));
     
     m_command_buffer.begin();
@@ -2510,10 +2510,10 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirectEnabled) {
     void *indirectBufferAddress;
     CreateAndBindBuffer(m_device, sizeof(cmds), sizeof(cmds), VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                         VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR, indirectBuffer, indirectBufferMemory, &indirectBufferAddress);
+    vk::MapMemory(m_device->handle(), indirectBufferMemory.handle(), 0, VK_WHOLE_SIZE, 0, &indirectBufferAddress);
     memcpy(indirectBufferAddress, &cmds, sizeof(cmds));
 
     // Create dstImage
-    VkImage dstImage;
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_3D;
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -2527,7 +2527,7 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirectEnabled) {
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    vk::CreateImage(*m_device, &image_ci, nullptr, &dstImage);
+    vkt::Image dstImage(*m_device, image_ci, vkt::no_mem);
 
     // dstImage memory requirements
     VkMemoryRequirements image_mem_reqs;
@@ -2546,7 +2546,7 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirectEnabled) {
         }
     }
     if (!dstMemType.has_value()) {
-        throw std::runtime_error("Failed to find appropriate memory type!");
+        GTEST_SKIP() << "Failed to find appropriate memory type!";
     }
     image_alloc_info.memoryTypeIndex = dstMemType.value();
     vkt::DeviceMemory image_memory(*m_device, image_alloc_info);
@@ -2573,7 +2573,6 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirectEnabled) {
                                        pImageSubresources);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyImage(*m_device, dstImage, nullptr);
     vk::UnmapMemory(device(), indirectBufferMemory.handle());
     m_command_buffer.end();
 }
@@ -2611,10 +2610,10 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirect) {
     void *indirectBufferAddress;
     CreateAndBindBuffer(m_device, sizeof(cmds), sizeof(cmds), VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                         VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR, indirectBuffer, indirectBufferMemory, &indirectBufferAddress);
+    vk::MapMemory(m_device->handle(), indirectBufferMemory.handle(), 0, VK_WHOLE_SIZE, 0, &indirectBufferAddress);
     memcpy(indirectBufferAddress, &cmds, sizeof(cmds));
 
     // Create dstImage
-    VkImage dstImage;
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -2628,7 +2627,7 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirect) {
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    vk::CreateImage(*m_device, &image_ci, nullptr, &dstImage);
+    vkt::Image dstImage(*m_device, image_ci, vkt::no_mem);
 
     // dstImage memory requirements
     VkMemoryRequirements image_mem_reqs;
@@ -2647,7 +2646,7 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirect) {
         }
     }
     if (!dstMemType.has_value()) {
-        throw std::runtime_error("Failed to find appropriate memory type!");
+        GTEST_SKIP() << "Failed to find appropriate memory type!";
     }
     image_alloc_info.memoryTypeIndex = dstMemType.value();
     vkt::DeviceMemory image_memory(*m_device, image_alloc_info);
@@ -2687,7 +2686,6 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirect) {
                                         pImageSubresourcesMB);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyImage(*m_device, dstImage, nullptr);
     vk::UnmapMemory(device(), indirectBufferMemory.handle());
     m_command_buffer.end();
 }
@@ -2725,6 +2723,7 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirectLayout) {
     void *indirectBufferAddress;
     CreateAndBindBuffer(m_device, sizeof(cmds), sizeof(cmds), VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                         VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR, indirectBuffer, indirectBufferMemory, &indirectBufferAddress);
+    vk::MapMemory(m_device->handle(), indirectBufferMemory.handle(), 0, VK_WHOLE_SIZE, 0, &indirectBufferAddress);
     memcpy(indirectBufferAddress, &cmds, sizeof(cmds));
 
     // Create pImageSubresources
