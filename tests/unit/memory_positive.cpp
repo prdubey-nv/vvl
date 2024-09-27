@@ -740,10 +740,10 @@ TEST_F(PositiveMemory, CopyMemoryToImageIndirect) {
     copy_region.extent.height = 1;
     copy_region.extent.depth = 1;
 
-    vk::CmdCopyImage(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dstImage.handle(),
+    vk::CmdCopyImage(m_command_buffer.handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dstImage.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     
-    vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, indirectBuffer.address(), copyCount, stride, dstImage, dstImageLayout,
+    vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer.handle(), indirectBuffer.address(), copyCount, stride, dstImage, dstImageLayout,
                                         pImageSubresources);
 
     vk::UnmapMemory(device(), indirectBufferMemory.handle());

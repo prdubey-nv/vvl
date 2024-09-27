@@ -2770,11 +2770,11 @@ TEST_F(NegativeMemory, CopyMemoryToImageIndirectLayout) {
     copy_region.dstOffset = {0, 0, 0};
     copy_region.extent = {1, 1, 1};
 
-    vk::CmdCopyImage(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
+    vk::CmdCopyImage(m_command_buffer.handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyMemoryToImageIndirectNV-dstImageLayout-07667");
-    vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer, indirectBuffer.address(), copyCount, stride, dst_image, dstImageLayout,
+    vk::CmdCopyMemoryToImageIndirectKHR(m_command_buffer.handle(), indirectBuffer.address(), copyCount, stride, dst_image, dstImageLayout,
                                         pImageSubresources);
     m_errorMonitor->VerifyFound();
 
