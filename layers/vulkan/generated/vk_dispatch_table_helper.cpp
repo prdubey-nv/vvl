@@ -580,9 +580,8 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdSetDescriptorBufferOffsets2EXT(VkComman
                                                                         const VkSetDescriptorBufferOffsetsInfoEXT*) {}
 static VKAPI_ATTR void VKAPI_CALL
 StubCmdBindDescriptorBufferEmbeddedSamplers2EXT(VkCommandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT*) {}
-static VKAPI_ATTR void VKAPI_CALL StubCmdCopyMemoryIndirectKHR(VkCommandBuffer, VkDeviceAddress, uint32_t, uint32_t) {}
-static VKAPI_ATTR void VKAPI_CALL StubCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer, VkDeviceAddress, uint32_t, uint32_t, VkImage,
-                                                                      VkImageLayout, const VkImageSubresourceLayers*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdCopyMemoryIndirectKHR(VkCommandBuffer, const VkCopyMemoryIndirectInfoKHR*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer, const VkCopyMemoryToImageIndirectInfoKHR*) {}
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateDebugReportCallbackEXT(VkInstance, const VkDebugReportCallbackCreateInfoEXT*,
                                                                        const VkAllocationCallbacks*, VkDebugReportCallbackEXT*) {
     return VK_SUCCESS;

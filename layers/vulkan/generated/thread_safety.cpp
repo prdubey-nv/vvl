@@ -4236,35 +4236,37 @@ void ThreadSafety::PostCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
     // Host access to commandBuffer must be externally synchronized
 }
 
-void ThreadSafety::PreCallRecordCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
-                                                         uint32_t copyCount, uint32_t stride, const RecordObject& record_obj) {
+void ThreadSafety::PreCallRecordCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, 
+                                                        const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo,
+                                                        const RecordObject& record_obj) {
     StartWriteObject(commandBuffer, record_obj.location);
     // Host access to commandBuffer must be externally synchronized
 }
 
-void ThreadSafety::PostCallRecordCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
-                                                          uint32_t copyCount, uint32_t stride, const RecordObject& record_obj) {
+void ThreadSafety::PostCallRecordCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, 
+                                                         const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo,
+                                                         const RecordObject& record_obj) {
     FinishWriteObject(commandBuffer, record_obj.location);
     // Host access to commandBuffer must be externally synchronized
 }
 
-void ThreadSafety::PreCallRecordCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
-                                                                uint32_t copyCount, uint32_t stride, VkImage dstImage,
-                                                                VkImageLayout dstImageLayout,
-                                                                const VkImageSubresourceLayers* pImageSubresources,
+void ThreadSafety::PreCallRecordCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
+                                                               const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo,
+                                                               const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    if (pCopyMemoryToImageIndirectInfo) {
+        StartReadObject(pCopyMemoryToImageIndirectInfo->dstImage, record_obj.location);
+    }
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
+                                                                const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo,
                                                                 const RecordObject& record_obj) {
-    StartWriteObject(commandBuffer, record_obj.location);
-    StartReadObject(dstImage, record_obj.location);
-    // Host access to commandBuffer must be externally synchronized
-}
-
-void ThreadSafety::PostCallRecordCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
-                                                                 uint32_t copyCount, uint32_t stride, VkImage dstImage,
-                                                                 VkImageLayout dstImageLayout,
-                                                                 const VkImageSubresourceLayers* pImageSubresources,
-                                                                 const RecordObject& record_obj) {
     FinishWriteObject(commandBuffer, record_obj.location);
-    FinishReadObject(dstImage, record_obj.location);
+    if (pCopyMemoryToImageIndirectInfo) {
+        FinishReadObject(pCopyMemoryToImageIndirectInfo->dstImage, record_obj.location);
+    }
     // Host access to commandBuffer must be externally synchronized
 }
 
@@ -7122,31 +7124,35 @@ void ThreadSafety::PostCallRecordGetDescriptorSetHostMappingVALVE(VkDevice devic
 }
 
 void ThreadSafety::PreCallRecordCmdCopyMemoryIndirectNV(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
-                                                        uint32_t copyCount, uint32_t stride, const RecordObject& record_obj) {
-    PreCallRecordCmdCopyMemoryIndirectKHR(commandBuffer, copyBufferAddress, copyCount, stride, record_obj);
+                                                       uint32_t copyCount, uint32_t stride, const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordCmdCopyMemoryIndirectNV(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
-                                                         uint32_t copyCount, uint32_t stride, const RecordObject& record_obj) {
-    PostCallRecordCmdCopyMemoryIndirectKHR(commandBuffer, copyBufferAddress, copyCount, stride, record_obj);
+                                                        uint32_t copyCount, uint32_t stride, const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
 }
 
 void ThreadSafety::PreCallRecordCmdCopyMemoryToImageIndirectNV(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
+                                                              uint32_t copyCount, uint32_t stride, VkImage dstImage,
+                                                              VkImageLayout dstImageLayout,
+                                                              const VkImageSubresourceLayers* pImageSubresources,
+                                                              const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    StartReadObject(dstImage, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdCopyMemoryToImageIndirectNV(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
                                                                uint32_t copyCount, uint32_t stride, VkImage dstImage,
                                                                VkImageLayout dstImageLayout,
                                                                const VkImageSubresourceLayers* pImageSubresources,
                                                                const RecordObject& record_obj) {
-    PreCallRecordCmdCopyMemoryToImageIndirectKHR(commandBuffer, copyBufferAddress, copyCount, stride, dstImage, dstImageLayout,
-                                                 pImageSubresources, record_obj);
-}
-
-void ThreadSafety::PostCallRecordCmdCopyMemoryToImageIndirectNV(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
-                                                                uint32_t copyCount, uint32_t stride, VkImage dstImage,
-                                                                VkImageLayout dstImageLayout,
-                                                                const VkImageSubresourceLayers* pImageSubresources,
-                                                                const RecordObject& record_obj) {
-    PostCallRecordCmdCopyMemoryToImageIndirectKHR(commandBuffer, copyBufferAddress, copyCount, stride, dstImage, dstImageLayout,
-                                                  pImageSubresources, record_obj);
+    FinishWriteObject(commandBuffer, record_obj.location);
+    FinishReadObject(dstImage, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
 }
 
 void ThreadSafety::PreCallRecordCmdDecompressMemoryNV(VkCommandBuffer commandBuffer, uint32_t decompressRegionCount,

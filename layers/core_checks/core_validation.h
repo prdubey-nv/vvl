@@ -2158,13 +2158,13 @@ class CoreChecks : public ValidationStateTracker {
                                                                    uint32_t firstQuery,
                                                                    const ErrorObject& error_obj) const override;
 
-    bool PreCallValidateCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
-                                                uint32_t copyCount, uint32_t stride, const ErrorObject& error_obj) const override;
-    bool PreCallValidateCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
-                                                       uint32_t copyCount, uint32_t stride, VkImage dstImage,
-                                                       VkImageLayout dstImageLayout,
-                                                       const VkImageSubresourceLayers* pImageSubresources,
-                                                       const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, 
+                                            const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo,
+                                            const ErrorObject& error_obj) const override;
+
+    bool PreCallValidateCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer, 
+                                                    const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo,
+                                                    const ErrorObject& error_obj) const override;
 
     // Calculates the total number of shader groups taking libraries into account.
     uint32_t CalcTotalShaderGroupCount(const vvl::Pipeline& pipeline) const;

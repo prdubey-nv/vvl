@@ -2203,21 +2203,21 @@ void PostCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
     VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
     const RecordObject& record_obj) override;
 
-void PreCallRecordCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount,
-                                           uint32_t stride, const RecordObject& record_obj) override;
+void PreCallRecordCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, 
+                                        const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo,
+                                        const RecordObject& record_obj) override;
 
-void PostCallRecordCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount,
-                                            uint32_t stride, const RecordObject& record_obj) override;
+void PostCallRecordCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, 
+                                        const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo,
+                                        const RecordObject& record_obj) override;
 
-void PreCallRecordCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
-                                                  uint32_t copyCount, uint32_t stride, VkImage dstImage,
-                                                  VkImageLayout dstImageLayout, const VkImageSubresourceLayers* pImageSubresources,
-                                                  const RecordObject& record_obj) override;
+void PreCallRecordCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
+                                        const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo,
+                                        const RecordObject& record_obj) override;
 
-void PostCallRecordCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
-                                                   uint32_t copyCount, uint32_t stride, VkImage dstImage,
-                                                   VkImageLayout dstImageLayout, const VkImageSubresourceLayers* pImageSubresources,
-                                                   const RecordObject& record_obj) override;
+void PostCallRecordCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
+                                        const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo,
+                                        const RecordObject& record_obj) override;
 
 void PreCallRecordCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback,

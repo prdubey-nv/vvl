@@ -1280,12 +1280,11 @@ static VKAPI_ATTR void VKAPI_CALL CmdSetDescriptorBufferOffsets2EXT(
     VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo);
 static VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorBufferEmbeddedSamplers2EXT(
     VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo);
-static VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
-                                                           uint32_t copyCount, uint32_t stride);
-static VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
-                                                                  uint32_t copyCount, uint32_t stride, VkImage dstImage,
-                                                                  VkImageLayout dstImageLayout,
-                                                                  const VkImageSubresourceLayers* pImageSubresources);
+static VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, 
+                                                        const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo);
+
+static VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
+                                                        const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo);
 static VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
                                                                    const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                                                    const VkAllocationCallbacks* pAllocator,
@@ -4039,13 +4038,11 @@ static VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorBufferEmbeddedSamplers2EXT(
     VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo) {
 }
 
-static VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
-                                                           uint32_t copyCount, uint32_t stride) {}
+static VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, 
+                                                        const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo) {}
 
-static VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
-                                                                  uint32_t copyCount, uint32_t stride, VkImage dstImage,
-                                                                  VkImageLayout dstImageLayout,
-                                                                  const VkImageSubresourceLayers* pImageSubresources) {}
+static VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer,
+                                                        const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo) {}
 
 static VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
                                                                    const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
@@ -5073,17 +5070,12 @@ GetDescriptorSetLayoutHostMappingInfoVALVE(VkDevice device, const VkDescriptorSe
 static VKAPI_ATTR void VKAPI_CALL GetDescriptorSetHostMappingVALVE(VkDevice device, VkDescriptorSet descriptorSet, void** ppData) {}
 
 static VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryIndirectNV(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
-                                                          uint32_t copyCount, uint32_t stride) {
-    CmdCopyMemoryIndirectKHR(commandBuffer, copyBufferAddress, copyCount, stride);
-}
+                                                          uint32_t copyCount, uint32_t stride) {}
 
 static VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToImageIndirectNV(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
                                                                  uint32_t copyCount, uint32_t stride, VkImage dstImage,
                                                                  VkImageLayout dstImageLayout,
-                                                                 const VkImageSubresourceLayers* pImageSubresources) {
-    CmdCopyMemoryToImageIndirectKHR(commandBuffer, copyBufferAddress, copyCount, stride, dstImage, dstImageLayout,
-                                    pImageSubresources);
-}
+                                                                 const VkImageSubresourceLayers* pImageSubresources) {}
 
 static VKAPI_ATTR void VKAPI_CALL CmdDecompressMemoryNV(VkCommandBuffer commandBuffer, uint32_t decompressRegionCount,
                                                         const VkDecompressMemoryRegionNV* pDecompressMemoryRegions) {}

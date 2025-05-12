@@ -20174,9 +20174,9 @@ bool StatelessValidation::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers
     return skip;
 }
 
-bool StatelessValidation::PreCallValidateCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
-                                                                  uint32_t copyCount, uint32_t stride,
-                                                                  const ErrorObject& error_obj) const {
+bool StatelessValidation::PreCallValidateCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, 
+                                                                 const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo,
+                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(device_extensions.vk_khr_copy_memory_indirect) && loc.function == vvl::Func::vkCmdCopyMemoryIndirectKHR)
@@ -20186,28 +20186,47 @@ bool StatelessValidation::PreCallValidateCmdCopyMemoryIndirectKHR(VkCommandBuffe
 }
 
 bool StatelessValidation::PreCallValidateCmdCopyMemoryToImageIndirectKHR(
-    VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount, uint32_t stride, VkImage dstImage,
-    VkImageLayout dstImageLayout, const VkImageSubresourceLayers* pImageSubresources, const ErrorObject& error_obj) const {
+    VkCommandBuffer commandBuffer, const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo,
+    const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(device_extensions.vk_khr_copy_memory_indirect) &&
         loc.function == vvl::Func::vkCmdCopyMemoryToImageIndirectKHR)
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_copy_memory_indirect});
-    skip |= ValidateRequiredHandle(loc.dot(Field::dstImage), dstImage);
-    skip |= ValidateRangedEnum(loc.dot(Field::dstImageLayout), vvl::Enum::VkImageLayout, dstImageLayout,
-                               "VUID-vkCmdCopyMemoryToImageIndirectKHR-dstImageLayout-parameter");
-    skip |= ValidateArray(loc.dot(Field::copyCount), loc.dot(Field::pImageSubresources), copyCount, &pImageSubresources, true, true,
-                          "VUID-vkCmdCopyMemoryToImageIndirectKHR-copyCount-arraylength",
-                          "VUID-vkCmdCopyMemoryToImageIndirectKHR-pImageSubresources-parameter");
-    if (pImageSubresources != nullptr) {
-        for (uint32_t copyIndex = 0; copyIndex < copyCount; ++copyIndex) {
-            [[maybe_unused]] const Location pImageSubresources_loc = loc.dot(Field::pImageSubresources, copyIndex);
-            skip |= ValidateFlags(pImageSubresources_loc.dot(Field::aspectMask), vvl::FlagBitmask::VkImageAspectFlagBits,
-                                  AllVkImageAspectFlagBits, pImageSubresources[copyIndex].aspectMask, kRequiredFlags,
-                                  "VUID-VkImageSubresourceLayers-aspectMask-parameter",
-                                  "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask");
+    
+    if (pCopyMemoryToImageIndirectInfo) {
+        skip |= ValidateRequiredHandle(loc.dot(Field::pCopyMemoryToImageIndirectInfo).dot(Field::dstImage), 
+                                      pCopyMemoryToImageIndirectInfo->dstImage);
+        
+        skip |= ValidateRangedEnum(loc.dot(Field::pCopyMemoryToImageIndirectInfo).dot(Field::dstImageLayout), 
+                                  vvl::Enum::VkImageLayout, 
+                                  pCopyMemoryToImageIndirectInfo->dstImageLayout,
+                                  "VUID-vkCmdCopyMemoryToImageIndirectKHR-dstImageLayout-parameter");
+        
+        skip |= ValidateArray(loc.dot(Field::pCopyMemoryToImageIndirectInfo).dot(Field::copyCount), 
+                             loc.dot(Field::pCopyMemoryToImageIndirectInfo).dot(Field::pImageSubresources), 
+                             pCopyMemoryToImageIndirectInfo->copyCount, 
+                             &pCopyMemoryToImageIndirectInfo->pImageSubresources, 
+                             true, true,
+                             "VUID-vkCmdCopyMemoryToImageIndirectKHR-copyCount-arraylength",
+                             "VUID-vkCmdCopyMemoryToImageIndirectKHR-pImageSubresources-parameter");
+        
+        if (pCopyMemoryToImageIndirectInfo->pImageSubresources != nullptr) {
+            for (uint32_t copyIndex = 0; copyIndex < pCopyMemoryToImageIndirectInfo->copyCount; ++copyIndex) {
+                [[maybe_unused]] const Location pImageSubresources_loc = 
+                    loc.dot(Field::pCopyMemoryToImageIndirectInfo).dot(Field::pImageSubresources, copyIndex);
+                
+                skip |= ValidateFlags(pImageSubresources_loc.dot(Field::aspectMask), 
+                                     vvl::FlagBitmask::VkImageAspectFlagBits,
+                                     AllVkImageAspectFlagBits, 
+                                     pCopyMemoryToImageIndirectInfo->pImageSubresources[copyIndex].aspectMask, 
+                                     kRequiredFlags,
+                                     "VUID-VkImageSubresourceLayers-aspectMask-parameter",
+                                     "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask");
+            }
         }
     }
+    
     return skip;
 }
 
@@ -25160,13 +25179,13 @@ bool StatelessValidation::PreCallValidateGetDescriptorSetHostMappingVALVE(VkDevi
 }
 
 bool StatelessValidation::PreCallValidateCmdCopyMemoryIndirectNV(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
-                                                                 uint32_t copyCount, uint32_t stride,
-                                                                 const ErrorObject& error_obj) const {
+                                                                uint32_t copyCount, uint32_t stride,
+                                                                const ErrorObject& error_obj) const {
     bool skip = false;
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(device_extensions.vk_nv_copy_memory_indirect))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_copy_memory_indirect});
-    skip |= PreCallValidateCmdCopyMemoryIndirectKHR(commandBuffer, copyBufferAddress, copyCount, stride, error_obj);
+    
     return skip;
 }
 
@@ -25177,8 +25196,24 @@ bool StatelessValidation::PreCallValidateCmdCopyMemoryToImageIndirectNV(
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(device_extensions.vk_nv_copy_memory_indirect))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_copy_memory_indirect});
-    skip |= PreCallValidateCmdCopyMemoryToImageIndirectKHR(commandBuffer, copyBufferAddress, copyCount, stride, dstImage,
-                                                           dstImageLayout, pImageSubresources, error_obj);
+    
+    skip |= ValidateRequiredHandle(loc.dot(Field::dstImage), dstImage);
+    skip |= ValidateRangedEnum(loc.dot(Field::dstImageLayout), vvl::Enum::VkImageLayout, dstImageLayout,
+                               "VUID-vkCmdCopyMemoryToImageIndirectNV-dstImageLayout-parameter");
+    skip |= ValidateArray(loc.dot(Field::copyCount), loc.dot(Field::pImageSubresources), copyCount, &pImageSubresources, true, true,
+                          "VUID-vkCmdCopyMemoryToImageIndirectNV-copyCount-arraylength",
+                          "VUID-vkCmdCopyMemoryToImageIndirectNV-pImageSubresources-parameter");
+    
+    if (pImageSubresources != nullptr) {
+        for (uint32_t copyIndex = 0; copyIndex < copyCount; ++copyIndex) {
+            [[maybe_unused]] const Location pImageSubresources_loc = loc.dot(Field::pImageSubresources, copyIndex);
+            skip |= ValidateFlags(pImageSubresources_loc.dot(Field::aspectMask), vvl::FlagBitmask::VkImageAspectFlagBits,
+                                 AllVkImageAspectFlagBits, pImageSubresources[copyIndex].aspectMask, kRequiredFlags,
+                                 "VUID-VkImageSubresourceLayers-aspectMask-parameter",
+                                 "VUID-VkImageSubresourceLayers-aspectMask-requiredbitmask");
+        }
+    }
+    
     return skip;
 }
 

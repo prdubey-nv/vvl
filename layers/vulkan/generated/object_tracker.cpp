@@ -4721,14 +4721,18 @@ bool ObjectLifetimes::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT
 // vkCmdCopyMemoryIndirectKHR:
 // Checked by chassis: commandBuffer: "VUID-vkCmdCopyMemoryIndirectKHR-commandBuffer-parameter"
 
-bool ObjectLifetimes::PreCallValidateCmdCopyMemoryToImageIndirectKHR(
-    VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount, uint32_t stride, VkImage dstImage,
-    VkImageLayout dstImageLayout, const VkImageSubresourceLayers* pImageSubresources, const ErrorObject& error_obj) const {
+bool ObjectLifetimes::PreCallValidateCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer, 
+    const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo,
+    const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: commandBuffer: "VUID-vkCmdCopyMemoryToImageIndirectKHR-commandBuffer-parameter"
     // Checked by chassis: commandBuffer: "VUID-vkCmdCopyMemoryToImageIndirectKHR-commonparent"
-    skip |= ValidateObject(dstImage, kVulkanObjectTypeImage, false, "VUID-vkCmdCopyMemoryToImageIndirectKHR-dstImage-parameter",
-                           "VUID-vkCmdCopyMemoryToImageIndirectKHR-commonparent", error_obj.location.dot(Field::dstImage));
+    if (pCopyMemoryToImageIndirectInfo) {
+        skip |= ValidateObject(pCopyMemoryToImageIndirectInfo->dstImage, kVulkanObjectTypeImage, false,
+                               "VUID-vkCmdCopyMemoryToImageIndirectKHR-dstImage-parameter",
+                               "VUID-vkCmdCopyMemoryToImageIndirectKHR-commonparent", 
+                               error_obj.location.dot(Field::pCopyMemoryToImageIndirectInfo).dot(Field::dstImage));
+    }
 
     return skip;
 }
@@ -7263,12 +7267,16 @@ bool ObjectLifetimes::PreCallValidateGetDescriptorSetHostMappingVALVE(VkDevice d
 // Checked by chassis: commandBuffer: "VUID-vkCmdCopyMemoryIndirectKHR-commandBuffer-parameter"
 
 bool ObjectLifetimes::PreCallValidateCmdCopyMemoryToImageIndirectNV(VkCommandBuffer commandBuffer,
-                                                                    VkDeviceAddress copyBufferAddress, uint32_t copyCount,
-                                                                    uint32_t stride, VkImage dstImage, VkImageLayout dstImageLayout,
-                                                                    const VkImageSubresourceLayers* pImageSubresources,
-                                                                    const ErrorObject& error_obj) const {
-    return PreCallValidateCmdCopyMemoryToImageIndirectKHR(commandBuffer, copyBufferAddress, copyCount, stride, dstImage,
-                                                          dstImageLayout, pImageSubresources, error_obj);
+                                                                   VkDeviceAddress copyBufferAddress, uint32_t copyCount,
+                                                                   uint32_t stride, VkImage dstImage, VkImageLayout dstImageLayout,
+                                                                   const VkImageSubresourceLayers* pImageSubresources,
+                                                                   const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdCopyMemoryToImageIndirectNV-commandBuffer-parameter"
+    // Checked by chassis: commandBuffer: "VUID-vkCmdCopyMemoryToImageIndirectNV-commonparent"
+    skip |= ValidateObject(dstImage, kVulkanObjectTypeImage, false, "VUID-vkCmdCopyMemoryToImageIndirectNV-dstImage-parameter",
+                           "VUID-vkCmdCopyMemoryToImageIndirectNV-commonparent", error_obj.location.dot(Field::dstImage));
+    return skip;
 }
 
 // vkCmdDecompressMemoryNV:

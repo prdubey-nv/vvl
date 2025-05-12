@@ -15466,8 +15466,8 @@ VKAPI_ATTR void VKAPI_CALL CmdBindDescriptorBufferEmbeddedSamplers2EXT(
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
-                                                    uint32_t copyCount, uint32_t stride) {
+VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, 
+                                                   const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo) {
     VVL_ZoneScoped;
 
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
@@ -15479,7 +15479,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffe
              layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyMemoryIndirectKHR]) {
             auto lock = intercept->ReadLock();
             skip |=
-                intercept->PreCallValidateCmdCopyMemoryIndirectKHR(commandBuffer, copyBufferAddress, copyCount, stride, error_obj);
+                intercept->PreCallValidateCmdCopyMemoryIndirectKHR(commandBuffer, pCopyMemoryIndirectInfo, error_obj);
             if (skip) return;
         }
     }
@@ -15488,26 +15488,24 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffe
         VVL_ZoneScopedN("PreCallRecord");
         for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyMemoryIndirectKHR]) {
             auto lock = intercept->WriteLock();
-            intercept->PreCallRecordCmdCopyMemoryIndirectKHR(commandBuffer, copyBufferAddress, copyCount, stride, record_obj);
+            intercept->PreCallRecordCmdCopyMemoryIndirectKHR(commandBuffer, pCopyMemoryIndirectInfo, record_obj);
         }
     }
     {
         VVL_ZoneScopedN("Dispatch");
-        DispatchCmdCopyMemoryIndirectKHR(commandBuffer, copyBufferAddress, copyCount, stride);
+        DispatchCmdCopyMemoryIndirectKHR(commandBuffer, pCopyMemoryIndirectInfo);
     }
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyMemoryIndirectKHR]) {
             auto lock = intercept->WriteLock();
-            intercept->PostCallRecordCmdCopyMemoryIndirectKHR(commandBuffer, copyBufferAddress, copyCount, stride, record_obj);
+            intercept->PostCallRecordCmdCopyMemoryIndirectKHR(commandBuffer, pCopyMemoryIndirectInfo, record_obj);
         }
     }
 }
 
-VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
-                                                           uint32_t copyCount, uint32_t stride, VkImage dstImage,
-                                                           VkImageLayout dstImageLayout,
-                                                           const VkImageSubresourceLayers* pImageSubresources) {
+VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer, 
+                                                          const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo) {
     VVL_ZoneScoped;
 
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
@@ -15520,7 +15518,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToImageIndirectKHR(VkCommandBuffer comma
              layer_data->intercept_vectors[InterceptIdPreCallValidateCmdCopyMemoryToImageIndirectKHR]) {
             auto lock = intercept->ReadLock();
             skip |= intercept->PreCallValidateCmdCopyMemoryToImageIndirectKHR(
-                commandBuffer, copyBufferAddress, copyCount, stride, dstImage, dstImageLayout, pImageSubresources, error_obj);
+                commandBuffer, pCopyMemoryToImageIndirectInfo, error_obj);
             if (skip) return;
         }
     }
@@ -15529,22 +15527,19 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToImageIndirectKHR(VkCommandBuffer comma
         VVL_ZoneScopedN("PreCallRecord");
         for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdCopyMemoryToImageIndirectKHR]) {
             auto lock = intercept->WriteLock();
-            intercept->PreCallRecordCmdCopyMemoryToImageIndirectKHR(commandBuffer, copyBufferAddress, copyCount, stride, dstImage,
-                                                                    dstImageLayout, pImageSubresources, record_obj);
+            intercept->PreCallRecordCmdCopyMemoryToImageIndirectKHR(commandBuffer, pCopyMemoryToImageIndirectInfo, record_obj);
         }
     }
     {
         VVL_ZoneScopedN("Dispatch");
-        DispatchCmdCopyMemoryToImageIndirectKHR(commandBuffer, copyBufferAddress, copyCount, stride, dstImage, dstImageLayout,
-                                                pImageSubresources);
+        DispatchCmdCopyMemoryToImageIndirectKHR(commandBuffer, pCopyMemoryToImageIndirectInfo);
     }
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (ValidationObject* intercept :
              layer_data->intercept_vectors[InterceptIdPostCallRecordCmdCopyMemoryToImageIndirectKHR]) {
             auto lock = intercept->WriteLock();
-            intercept->PostCallRecordCmdCopyMemoryToImageIndirectKHR(commandBuffer, copyBufferAddress, copyCount, stride, dstImage,
-                                                                     dstImageLayout, pImageSubresources, record_obj);
+            intercept->PostCallRecordCmdCopyMemoryToImageIndirectKHR(commandBuffer, pCopyMemoryToImageIndirectInfo, record_obj);
         }
     }
 }

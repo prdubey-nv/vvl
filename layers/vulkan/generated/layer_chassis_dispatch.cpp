@@ -5600,23 +5600,23 @@ void DispatchCmdBindDescriptorBufferEmbeddedSamplers2EXT(
         commandBuffer, (const VkBindDescriptorBufferEmbeddedSamplersInfoEXT*)local_pBindDescriptorBufferEmbeddedSamplersInfo);
 }
 
-void DispatchCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount,
-                                      uint32_t stride) {
+void DispatchCmdCopyMemoryIndirectKHR(VkCommandBuffer commandBuffer, const VkCopyMemoryIndirectInfoKHR* pCopyMemoryIndirectInfo) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
 
-    layer_data->device_dispatch_table.CmdCopyMemoryIndirectKHR(commandBuffer, copyBufferAddress, copyCount, stride);
+    layer_data->device_dispatch_table.CmdCopyMemoryIndirectKHR(commandBuffer, pCopyMemoryIndirectInfo);
 }
 
-void DispatchCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount,
-                                             uint32_t stride, VkImage dstImage, VkImageLayout dstImageLayout,
-                                             const VkImageSubresourceLayers* pImageSubresources) {
+void DispatchCmdCopyMemoryToImageIndirectKHR(VkCommandBuffer commandBuffer, const VkCopyMemoryToImageIndirectInfoKHR* pCopyMemoryToImageIndirectInfo) {
     auto layer_data = GetLayerDataPtr(GetDispatchKey(commandBuffer), layer_data_map);
     if (!wrap_handles)
         return layer_data->device_dispatch_table.CmdCopyMemoryToImageIndirectKHR(
-            commandBuffer, copyBufferAddress, copyCount, stride, dstImage, dstImageLayout, pImageSubresources);
-    { dstImage = layer_data->Unwrap(dstImage); }
-    layer_data->device_dispatch_table.CmdCopyMemoryToImageIndirectKHR(commandBuffer, copyBufferAddress, copyCount, stride, dstImage,
-                                                                      dstImageLayout, pImageSubresources);
+            commandBuffer, pCopyMemoryToImageIndirectInfo);
+
+    // Unwrap the image handle
+    VkCopyMemoryToImageIndirectInfoKHR local_info = *pCopyMemoryToImageIndirectInfo;
+    local_info.dstImage = layer_data->Unwrap(pCopyMemoryToImageIndirectInfo->dstImage);
+    
+    layer_data->device_dispatch_table.CmdCopyMemoryToImageIndirectKHR(commandBuffer, &local_info);
 }
 
 VkResult DispatchCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
