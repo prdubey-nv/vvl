@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-20.04
     name: "Ubuntu Backcompat"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Test Minimum CMake Version
         uses: lukka/get-cmake@latest
         with:
@@ -79,7 +79,7 @@ jobs:
             robin_hood: "ON"
             sanitize: thread
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: lukka/get-cmake@latest
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
@@ -116,7 +116,7 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: lukka/get-cmake@latest
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
@@ -135,7 +135,7 @@ jobs:
   androidOnLinux:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: lukka/get-cmake@latest
       - uses: actions/setup-python@v5
         with:
@@ -162,7 +162,7 @@ jobs:
       matrix:
         arch: [ amd64, amd64_x86 ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -191,7 +191,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -233,7 +233,7 @@ jobs:
             stl_type: c++_static
 
       steps:
-        - uses: actions/checkout@v4
+        - uses: actions/checkout@v5
         - uses: lukka/get-cmake@latest
         - name: Setup ccache
           uses: hendrikmuhs/ccache-action@v1.2
@@ -262,7 +262,7 @@ jobs:
       if: github.ref == 'refs/heads/main'
       runs-on: ubuntu-22.04
       steps:
-        - uses: actions/checkout@v4
+        - uses: actions/checkout@v5
         - uses: lukka/get-cmake@latest
         - name: Setup ccache
           uses: hendrikmuhs/ccache-action@v1.2
@@ -295,7 +295,7 @@ jobs:
   iOS:
     runs-on: macos-12
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -329,7 +329,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
@@ -358,14 +358,14 @@ jobs:
           - 'target_os="linux" target_cpu="x64"'
           - 'target_os="android" target_cpu="arm64"'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
       - run: python scripts/gn/gn.py --args='${{ matrix.args }}'
 
   check_vvl:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
